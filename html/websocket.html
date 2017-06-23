@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>websocket</title>
+    <script type="text/javascript" src="https://cdn.bootcss.com/jquery/3.2.1/jquery.min.js"></script>
+    <script type="text/javascript" src="https://cdn.bootcss.com/socket.io/2.0.3/socket.io.slim.js"></script>
+    <style type="text/css">
+        .tip{
+            font-size:12px;
+            text-align: center;
+        }
+        .right{
+            text-align: right
+        }
+    </style>
+</head>
+<body>
+    <div id="con">
+    </div>
+    <textarea id="message"></textarea>
+    <button id="submit">发送</button>
+    <script type="text/javascript">
+    var userInfo = {
+        id:generateMixed(10),
+        name:"游客_"+generateMixed(4)
+    }
+    $("#con").append("<p class='tip'>当前用户 <b>"+userInfo.name+"[<small>"+userInfo.id+"</small>] </p>")
+    var socket = io();
+    socket.emit('login',userInfo);
+    socket.on("login", function(data) {
+        $("#con").append("<p class='tip'>欢迎 <b>"+data.name+"[<small>"+data.id+"</small>] </b> 用户登录，当前在线人数"+data.onlineCount+"</p>")
+    });
+    socket.on("logout", function(data) {
+        $("#con").append("<p class='tip'><b>"+data.name+"[<small>"+data.id+"</small>] </b>用户退出，当前在线人数"+data.onlineCount+"</p>")
+    });
+    socket.on("chat", function(data) {
+        if(data.id==userInfo.id)
+            $("#con").append("<p class='left'><b>我:  </b>"+data.data+"</p>")
+        else
+            $("#con").append("<p class='right'>"+data.data+"<b>  :"+data.name+"["+data.id+"] </b></p>")
+    });
+    $("#submit").click(function(){
+        socket.emit('chat',userInfo.id,$("#message").val());
+    })
+    
+    function generateMixed(n) {
+        var chars = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'];
+        var res = "";
+        for (var i = 0; i < n; i++) {
+            var id = Math.ceil(Math.random() * 35);
+            res += chars[id];
+        }
+        return res;
+    }
+    </script>
+</body>
+
+</html>
