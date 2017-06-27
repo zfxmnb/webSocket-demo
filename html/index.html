@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>websocket</title>
+    <script type="text/javascript" src="https://cdn.bootcss.com/jquery/3.2.1/jquery.min.js"></script>
+    <script type="text/javascript" src="https://cdn.bootcss.com/socket.io/2.0.3/socket.io.slim.js"></script>
+    <style type="text/css">
+    .tip {
+        font-size: 12px;
+        text-align: center;
+    }
+    
+    .right {
+        text-align: right
+    }
+    </style>
+</head>
+
+<body>
+    <div id="con">
+    </div>
+    <textarea id="message"></textarea>
+    <button id="submit">发送</button>
+    <script type="text/javascript">
+    var userInfo = {
+        id: generateMixed(10),
+        name: "游客_" + generateMixed(4)
+    }
+    $("#con").append("<p class='tip'>当前用户 <b>" + userInfo.name + "[<small>" + userInfo.id + "</small>] </p>");
+    var t = "LpdR";
+    $.ajax({
+        url: "/socket.io/?EIO=3&transport=polling&t=" + t + generateMixed(3),
+        success: function(data) {
+            //获取sid
+            data = JSON.parse(data.split("97:0")[1].split("2:40")[0]);
+            var sid = data.sid;
+            //WebSocket对象
+            var ws = new WebSocket("ws://localhost:8000/socket.io/?EIO=3&transport=websocket&t=" + t + generateMixed(3) + "&sid=" + sid);
+            $.ajax({
+                url: "/socket.io/?EIO=3&transport=polling&t=" + t + generateMixed(3) + "&sid=" + sid,
+                type: "post",
+                data: "48:42" + JSON.stringify(["login", userInfo]),
+                success: function(data) {
+                    ws.onopen = function() {
+                        //保持连接
+                        setInterval(function() {
+                            ws.send("5")
+                        }, 25000);
+                        //初次发送
+                        ws.send("2probe");
+                        ws.send("5");
+                        $("#submit").click(function() {、、
+                            点击发送
+                            ws.send("42" + JSON.stringify(["chat", userInfo.id, $("#message").val()]));
+                        });
+                    };
+                    ws.onmessage = function(e) {
+                        console.log(e);
+                        if (e.data.indexOf("42") === 0) {
+                            var msg = JSON.parse(e.data.split("42")[1]);
+                            data = msg[1];
+                            //监听事件
+                            switch (msg[0]) {
+                                case "chat":
+                                    if (userInfo.id == data.id)
+                                        $("#con").append("<p class='left'><b>我:  </b>" + data.data + "</p>")
+                                    else
+                                        $("#con").append("<p class='right'>" + data.data + "<b>  :" + data.name + "[" + data.id + "] </b></p>")
+                                    break;
+                                case "login":
+                                    $("#con").append("<p class='tip'>欢迎 <b>" + data.name + "[<small>" + data.id + "</small>] </b> 用户登录，当前在线人数" + data.onlineCount + "</p>");
+                                    break;
+                                case "logout":
+                                    $("#con").append("<p class='tip'><b>" + data.name + "[<small>" + data.id + "</small>] </b>用户退出，当前在线人数" + data.onlineCount + "</p>");
+                                    break;
+                            }
+                        }
+                    };
+                    //断开提示
+                    ws.onclose = function() {
+                        alert("连接关闭");
+                    };
+                    //错误提示
+                    ws.onerror = function() {
+                        alert("连接错误");
+                    };
+                }
+            });
+        }
+    });
+    //随机字符串
+    function generateMixed(n) {
+        var chars = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'];
+        var res = "";
+        for (var i = 0; i < n; i++) {
+            var id = Math.ceil(Math.random() * 35);
+            res += chars[id];
+        }
+        return res;
+    }
+    </script>
+</body>
+
+</html>
