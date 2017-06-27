@@ -51,8 +51,8 @@
                         //初次发送
                         ws.send("2probe");
                         ws.send("5");
-                        $("#submit").click(function() {、、
-                            点击发送
+                        $("#submit").click(function() {
+                            //点击发送
                             ws.send("42" + JSON.stringify(["chat", userInfo.id, $("#message").val()]));
                         });
                     };
